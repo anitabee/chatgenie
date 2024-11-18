@@ -1,18 +1,16 @@
 /*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
+Copyright © 2024 Anita Bendelja @anitbee
 */
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
-	"io"
+	"log"
 	"os"
 
-	"net/http"
-
+	huggingface "github.com/hupe1980/go-huggingface"
 	"github.com/spf13/cobra"
 )
 
@@ -45,60 +43,46 @@ func init() {
 	// chatCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func parseQuestion(args []string) {
-	askQuestion(args)
-}
+var modelName = "bigscience/bloom"
 
-const hfAPIURL = "https://api-inference.huggingface.co/models/bigscience/bloom"
-
-type Payload struct {
-	Inputs string `json:"inputs"`
-}
-
-func getToken() (string, error) {
+func getClient() (*huggingface.InferenceClient, error) {
 	apiToken := os.Getenv("HF_API_TOKEN")
 
 	if apiToken == "" {
-		return "", errors.New("HF_API_TOKEN environment variable was not passed")
+		return nil, errors.New("HF_API_TOKEN environment variable was not passed")
 	}
-	return apiToken, nil
+	client := huggingface.NewInferenceClient(apiToken)
+	return client, nil
 }
 
-func askQuestion(question []string) {
-	apiToken, _ := getToken()
+func parseQuestion(question []string) {
+	client, err := getClient()
+	if err != nil {
+		log.Fatalf("Error reaching Hugging Face API or model %s: %v", modelName, err)
 
-	payload := Payload{
+	}
+
+	maxNewTokens := 100
+	topP := 0.8
+	repetitionPenalty := 1.2
+	temperature := 0.7
+	numReturnSequences := 3
+
+	request := &huggingface.TextGenerationRequest{
 		Inputs: question[0],
+		Parameters: huggingface.TextGenerationParameters{
+			MaxNewTokens:       &maxNewTokens,
+			TopP:               &topP,
+			RepetitionPenalty:  &repetitionPenalty,
+			Temperature:        &temperature,
+			NumReturnSequences: &numReturnSequences,
+		},
+		Model: "bigscience/bloom",
 	}
-
-	jsonPayload, err := json.Marshal(payload)
+	response, err := client.TextGeneration(context.Background(), request)
 	if err != nil {
-		fmt.Printf("Error serializing payload: %s\n", err)
-		return
+		log.Fatalf("Error generating text: %v", err)
 	}
+	fmt.Println(response[0].GeneratedText)
 
-	req, err := http.NewRequest("POST", hfAPIURL, bytes.NewBuffer(jsonPayload))
-	if err != nil {
-		fmt.Printf("Error creating request: %s\n", err)
-		return
-	}
-
-	req.Header.Set("Authorization", "Bearer "+apiToken)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Printf("Error sending request: %s\n", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("Error reading response: %s\n", err)
-		return
-	}
-
-	fmt.Printf("Response: %s\n", body)
 }
