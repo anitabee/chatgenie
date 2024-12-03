@@ -1,5 +1,5 @@
 /*
-Copyright © 2024 Anita Bendelja @anitbee
+Copyright © 2024 Anita Bendelja @anitabee
 */
 package cmd
 
