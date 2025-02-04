@@ -12,7 +12,10 @@ import (
 
 	huggingface "github.com/hupe1980/go-huggingface"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
+
+var modelName = viper.GetString("model")
 
 // chatCmd represents the chat command
 var chatCmd = &cobra.Command{
@@ -25,6 +28,9 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(args) == 0 {
+			log.Fatalf("Please provide a question")
+		}
 		parseQuestion(args)
 	},
 }
@@ -43,8 +49,6 @@ func init() {
 	// chatCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-var modelName = "bigscience/bloom"
-
 func getClient() (*huggingface.InferenceClient, error) {
 	apiToken := os.Getenv("HF_API_TOKEN")
 
@@ -62,11 +66,11 @@ func parseQuestion(question []string) {
 
 	}
 
-	maxNewTokens := 100
+	maxNewTokens := 30
 	topP := 0.8
 	repetitionPenalty := 1.2
 	temperature := 0.7
-	numReturnSequences := 3
+	numReturnSequences := 1
 
 	request := &huggingface.TextGenerationRequest{
 		Inputs: question[0],
@@ -77,7 +81,7 @@ func parseQuestion(question []string) {
 			Temperature:        &temperature,
 			NumReturnSequences: &numReturnSequences,
 		},
-		Model: "bigscience/bloom",
+		Model: modelName,
 	}
 	response, err := client.TextGeneration(context.Background(), request)
 	if err != nil {

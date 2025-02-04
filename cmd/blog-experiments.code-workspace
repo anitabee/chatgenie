@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "../../hello-TinyGo"
+		},
+		{
+			"path": "../../openai"
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../huggingface"
+		},
+		{
+			"path": "../../../go-huggingface"
+		}
+	],
+	"settings": {}
+}
