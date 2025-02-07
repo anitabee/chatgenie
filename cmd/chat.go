@@ -15,8 +15,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var modelName = viper.GetString("model")
-
 // chatCmd represents the chat command
 var chatCmd = &cobra.Command{
 	Use:   "chat",
@@ -60,12 +58,13 @@ func getClient() (*huggingface.InferenceClient, error) {
 }
 
 func parseQuestion(question []string) {
+	var modelName = viper.GetString("model")
+
 	client, err := getClient()
 	if err != nil {
 		log.Fatalf("Error reaching Hugging Face API or model %s: %v", modelName, err)
 
 	}
-
 	maxNewTokens := 30
 	topP := 0.8
 	repetitionPenalty := 1.2
